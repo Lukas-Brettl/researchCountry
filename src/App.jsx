@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NoneFlag from "./assets/images/noneFlag.jpg"
 import ComboBox from "./components/combobox.jsx"
 import "./App.css"
@@ -11,13 +11,62 @@ export default function App(){
   const [comboInfo, setComboInfo] = useState()
   const [firstFour, setFirstFour] = useState()
 
+  
+  var inputRef =  useRef()
+  function handleItemClick(code){
+    console.log(code)
 
-  firstFour && console.log(firstFour[0])
-  function handleItemClick(index){
-    console.log(index)
-    let object = firstFour[index]
-    setSearch(object["name"]["common"])
+    setIsLoading(true)
+    fetch(`https://restcountries.com/v3.1/alpha/${code}`)
+    .then(
+      res => {
+        if(!res.ok){
+          console.log("Neplatný uživatelský vstup")
+          setFlag("")
+          setInformation("")
+          setIsLoading(false) // if fatch fails set default flag, delete information and stop Loading
+        }
+        else{
+          return res.json() // if data is ok continues
+        }
+    })
+    .then(
+      data =>{
+        
+        setFlag(data[0]["flags"]["svg"]) //set flag
+        setSearch(data[0]["name"]["common"])
+       
+
+        let capital = ""
+        let currencies = ""
+        const lastCity = data[0]["capital"][data[0]["capital"].length -1] 
+        data[0]["capital"].map(item => item === lastCity ? capital += item : capital +=`${item}, `) //set capital cities (when is one city set one city, but when is more then one capital city set ",")
+
+        let CurrenciesEntries = Object.entries(data[0]["currencies"])
+
+        for(let [key, value] of CurrenciesEntries){ // (I don't know why but if I don't use the key it won't work)
+            currencies ? currencies += ", ": null // when there is more then one currency set ","
+            currencies += `${value["name"]} (${value["symbol"]})` // add currencies and symbol
+        }
+
+        setInformation(
+          <div className='flex flex-col gap-2 ml-2 mt-4 w-64'>
+            <h3>Capital city: {capital}</h3>
+            <h3>Population: {data[0]["population"]}</h3>
+            <h3>Region: {data[0]["region"]}</h3>
+            <h3>Currency: {currencies}</h3>
+            <a href={data[0]["maps"]["googleMaps"]} className=' w-36 ml-28 mt-4 text-center font-semibold bg-blue-500 text-white p-2 rounded-md' target='_blank'>Go to the map</a>
+        </div>
+        )
+        console.log(search,capital,data[0]["population"],currencies)
+      }
+    )
+
   }
+
+
+
+
 
 
   //fetch data
@@ -45,7 +94,10 @@ export default function App(){
           
           firstFour && firstFour.map(item => setComboInfo((prevInfo) => ({
             ...prevInfo,
-            [item["name"]["common"]]: item["flags"]["svg"] //set combobox informations key("country") : value("svg flag")
+            [item["name"]["common"]]: {
+              flag: item["flags"]["svg"], //set combobox informations key("country") : value("svg flag")
+              code: item["ccn3"]
+            } 
           })))
 
           if(data && data[0]["flags"]["svg"] != flag){ // if flag changes
@@ -101,7 +153,7 @@ export default function App(){
           <svg width="20" height="20" fill="currentColor" className="absolute left-3 top-11 mt-2.5 text-slate-400 pointer-events-none group-focus-within:text-blue-500" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
           </svg>
-        <input onChange={(e) => setSearch(e.target.value)} type="text" placeholder='Search...' className='relatve bg-white border-slate-500 focus:border-blue-500 border-2 z-10 w-80 h-12 mt-10 pl-10 rounded-lg font-semibold outline-none '/> {/* Input for countries*/}
+        <input onChange={(e) => setSearch(e.target.value)} ref={inputRef}  type="text" placeholder='Search...' className='relatve bg-white border-slate-500 focus:border-blue-500 border-2 z-10 w-80 h-12 mt-10 pl-10 rounded-lg font-semibold outline-none '/> {/* Input for countries*/}
         {comboInfo && <ComboBox info={comboInfo} onItemClick={handleItemClick}/>} {/* set combobox*/}
         </div>
 
