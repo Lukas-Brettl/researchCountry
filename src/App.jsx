@@ -12,7 +12,8 @@ export default function App(){
   const [firstFour, setFirstFour] = useState()
 
   
-  var inputRef =  useRef()
+  const isUserInput = useRef(true)
+
   function handleItemClick(code){
     console.log(code)
 
@@ -34,8 +35,9 @@ export default function App(){
       data =>{
         
         setFlag(data[0]["flags"]["svg"]) //set flag
+
+        isUserInput.current = false
         setSearch(data[0]["name"]["common"])
-       
 
         let capital = ""
         let currencies = ""
@@ -59,6 +61,7 @@ export default function App(){
         </div>
         )
         console.log(search,capital,data[0]["population"],currencies)
+        setIsLoading(false)
       }
     )
 
@@ -71,6 +74,11 @@ export default function App(){
 
   //fetch data
   useEffect(()=>{
+    if (!isUserInput.current) {
+      isUserInput.current = true
+      return undefined
+    }
+
     if(search.length > 2){ //input must be min 3 letters
       setIsLoading(true)
       fetch(`https://restcountries.com/v3.1/name/${search}`).then(
@@ -92,13 +100,15 @@ export default function App(){
           setComboInfo(null) //reset combobox (undex input)
           setFirstFour(data.slice(0, 4)) //get first four countries
           
-          firstFour && firstFour.map(item => setComboInfo((prevInfo) => ({
-            ...prevInfo,
-            [item["name"]["common"]]: {
+          const newComboInfo = {}
+          firstFour && firstFour.map(item => {
+            
+            newComboInfo[item["name"]["common"]] = {
               flag: item["flags"]["svg"], //set combobox informations key("country") : value("svg flag")
               code: item["ccn3"]
             } 
-          })))
+          })
+          setComboInfo(newComboInfo)
 
           if(data && data[0]["flags"]["svg"] != flag){ // if flag changes
 
@@ -134,7 +144,7 @@ export default function App(){
             
           }
           },
-        setIsLoading(false) //ends loading
+        //ends loading
       )
     }
     else{
@@ -153,17 +163,17 @@ export default function App(){
           <svg width="20" height="20" fill="currentColor" className="absolute left-3 top-11 mt-2.5 text-slate-400 pointer-events-none group-focus-within:text-blue-500" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
           </svg>
-        <input onChange={(e) => setSearch(e.target.value)} ref={inputRef}  type="text" placeholder='Search...' className='relatve bg-white border-slate-500 focus:border-blue-500 border-2 z-10 w-80 h-12 mt-10 pl-10 rounded-lg font-semibold outline-none '/> {/* Input for countries*/}
+        <input onChange={(e) => setSearch(e.target.value)}  type="text" placeholder='Search...' className='relatve bg-white border-slate-500 focus:border-blue-500 border-2 z-10 w-80 h-12 mt-10 pl-10 rounded-lg font-semibold outline-none '/> {/* Input for countries*/}
         {comboInfo && <ComboBox info={comboInfo} onItemClick={handleItemClick}/>} {/* set combobox*/}
         </div>
 
 
       </div>
  
-      <aside className='flex flex-col items-center w-72 pb-3 mr-16 border-2 border-slate-500 rounded bg-white'> 
+      <aside className='relative flex flex-col items-center w-72 pb-3 mr-16 border-2 border-slate-500 rounded bg-white'> 
         <img src={flag ? flag : NoneFlag} alt="flag" className='w-auto h-32 mt-8 border shadow' /> 
         <h2 className='text-center mt-2 text-2xl font-semibold w-64 overflow-clip'>{search? search : "Country"}</h2>
-        {isLoading ? (<h1>Loading</h1>) : (information && information)} {/* add loading text if it takes long time to load informations */}
+        {isLoading ? (<h1 className='absolute flex justify-center items-center top-20 p-3 text-3xl font-semibold rounded-lg bg-white w-40'>Loading...</h1>) : (information && information)} {/* add loading text if it takes long time to load informations */}
       </aside>
     </section>
 
