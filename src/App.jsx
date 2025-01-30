@@ -144,6 +144,7 @@ export default function App(){
             
           }
           },
+          setIsLoading(false)
         //ends loading
       )
     }
