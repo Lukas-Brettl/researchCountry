@@ -1,5 +1,5 @@
 # research Country app
-- This app (in the future) displays information about the country you are looking for (capital city, flag, language,...)
+- This app displays information about the country you are looking for (capital city, flag, region,...)
 
 # React + Vite
 
